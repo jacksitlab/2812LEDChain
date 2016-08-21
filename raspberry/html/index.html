@@ -1,0 +1,43 @@
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <script src="js/jquery-3.1.0.min.js"></script>
+    <style>
+    .buttonbox{cursor:pointer;display:inline-block;height:2em;min-width:7em;border:1px solid #000;margin:0.3em;}
+    .buttonbox > span{display:block;height:100%;vertical-align:middle;line-height:2em;text-align:center;}
+    #container{position:absolute;left:0;top:0;right:0;bottom:0;}
+    </style>
+</head>
+<body>
+<div id="container">
+    <div class="buttonbox" tag="test">
+        <span>Test</span>
+    </div>
+ <div class="buttonbox" tag="offset&value=10">
+        <span>+</span>
+    </div>
+
+    <div class="buttonbox" tag="offset&value=-10">
+        <span>-</span>
+    </div>
+
+</div>
+</body>
+</html>
+<script>
+$(function(){
+  console.log("initialized");
+  $('.buttonbox').click(function(){
+    var task=$(this).attr('tag');
+    if(task.length>0)
+    {
+      $.ajax({
+        url:'cgi-bin/api.py?task='+task,
+        success: function(r){
+	  console.log(r);
+	}
+      });
+    }
+  });
+});
+</script>
