@@ -6,10 +6,12 @@
  */
 #include <msp430.h>
 #include "constants.h"
+#include "i2c.h"
 
 #define RESET_OFFSET 40
 #pragma SET_DATA_SECTION(".fram_data_noinit")
 unsigned char ledoutputmem[3*3*NUMLEDSMAX+RESET_OFFSET];
+//unsigned char ledoutfactors[NUMLEDSMAX+1/2];//4bit factor 0=>shift right 0; 0x0F
 #pragma SET_DATA_SECTION()
 
 const unsigned long convert_table_3bit [256] = {		// 1 Byte => 3 Byte
@@ -84,9 +86,11 @@ void spi_init(void)
 	    DMACTL1 = 0;
 	    DMACTL2 = 0;
 	    DMACTL3 = 0;                                // Destination single address
-	  DMA0SZ = (sizeof ledoutputmem)-1 ;                            // Block size
+	  DMA0SZ = sizeof(ledoutputmem)-1  ;                          // Block size
 	  DMA0CTL = DMASRCINCR_3 + DMASBDB + DMALEVEL+ DMADT_0;		// inc src_adr, byte=>byte, level sensitive, Repeated single
 	  DMA0CTL |= DMAEN;                         // Enable DMA0
+
+	  //clear first bytes of outputmem for led reset signal
 	  unsigned char i=RESET_OFFSET;
 	  unsigned char* ptr=ledoutputmem;
 	  while(i--)
@@ -112,7 +116,6 @@ void spi_calculate(unsigned char* src,unsigned int len)
 }
 void spi_dma_write(void)
 {
-	//spi_loadtest();
 	DMA0CTL |= DMAEN;
 	//DMA0CTL |= DMAREQ;                      // Trigger block transfer
 	UCA1TXBUF = ledoutputmem[0];

@@ -102,7 +102,7 @@ Yeah, thats right. But this lib is using the PWM-output Pin and many of my Proje
 
 * Set RGBChain Length via Command
 * Change I2C-Address via Command
-* Add more functions
+* Add more functions ...
 
 ##License
 

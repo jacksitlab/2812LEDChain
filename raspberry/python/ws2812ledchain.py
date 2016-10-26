@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import smbus
 import time
 
@@ -21,6 +23,7 @@ class WS2812ChainItem(object):
             buffer.append(0xff&(color>>16))
             buffer.append(0xff&(color>>8))
             buffer.append(0xff&(color))
+#        print buffer
         self._bus.write_i2c_block_data(self._address, 0xff&(adr>>8), buffer)
 
     def Clear(self):
@@ -49,16 +52,16 @@ class WS2812ChainItem(object):
 
     def Test(self):
         ledcolors=[0xff0000,0x00ff00,0x0000ff,0xffff00,0xff00ff,0x00ffff]
-        ledcolors2=[0x00ff00,0xff0000,0xff0000,0xff0000,0xffFFff,0x0000ff]
-        self.Write(0,ledcolors)
-        time.sleep(2)
+        ledcolors2=[0x000000,0xffffff,0xff0000,0xff0000,0xffFFff,0x0000ff]
         self.Write(0,ledcolors2)
         time.sleep(2)
-        self.Clear()
+        self.Write(0,ledcolors)
+        time.sleep(2)
+#        self.Clear()
 
     def Test2(self):
         ledcolors=[0xff0000,0x00ff00,0x0000ff,0xffff00,0xff00ff,0x00ffff]
-        ledcolors2=[0xff0000,0x800000,0x400000,0x300000,0x200000,0x100000]
+        ledcolors2=[0x9abcde,0x800000,0x400000,0x300000,0x200000,0x100000]
         self.Write(0,ledcolors)
         time.sleep(2)
         self.Write(0,ledcolors2)
@@ -84,3 +87,5 @@ class WS2812Chain(object):
 #leds.RingBuffer(100,0)
 #time.sleep(5)
 #leds.RingBuffer(100,1)
+#time.sleep(2)
+#leds.Clear()

@@ -1,3 +1,34 @@
+
+/**
+ * |==================================|
+ * |                                  |
+ * |           Memory 1               |
+ * |          for RGB Values          |
+ * |        Size: NUMLEDSMAX          |
+ * |                                  |
+ * |==================================|
+ *
+ *
+ * |==================================|
+ * |                                  |
+ * |           Memory 2               |
+ * |        for DMA output            |
+ * |  Size: 3* RGBMem + ResetOffset   |
+ * |                                  |
+ * |==================================|
+ *
+ *
+ * |==================================|
+ * |                                  |
+ * |           Memory 3               |
+ * |          for Config              |
+ * |                                  |
+ * |==================================|
+ *
+ */
+
+
+
 #include <msp430.h> 
 
 #include "i2c.h"
@@ -12,6 +43,7 @@
 #define PROGRAM_OFFSET 2
 #define PROGRAM_KITT 3
 #define PROGRAM_RINGBUFFER 4
+
 
 
 unsigned int programMode=PROGRAM_IDLE;
@@ -29,8 +61,8 @@ void clock_init(void)
 }
 void i2c_onwritecomplete(unsigned char* ptr,unsigned int len)
 {
-	spi_calculate(rgbmem,rgb_getlength());
-	spi_dma_write();
+	//spi_calculate(rgbmem,rgb_getnumleds());
+	//spi_dma_write();
 #ifdef COMPILE_MINIMAL
 	spi_calculate(rgbmem,rgb_getlength());
     spi_dma_write();
@@ -46,6 +78,7 @@ void i2c_oncommand(unsigned int command,unsigned char* params)
 		case COMMAND_OFFSET:
 		{
 			programMode=PROGRAM_OFFSET;
+			parammem[0]=*params++;
 			break;
 		}
 		case COMMAND_DEMO_KITT:
@@ -57,6 +90,26 @@ void i2c_oncommand(unsigned int command,unsigned char* params)
 		case COMMAND_RINGBUFFER:
 		{
 			programMode=PROGRAM_RINGBUFFER;
+			parammem[0]=*params++;
+			parammem[1]=*params++;
+			break;
+		}
+		case COMMAND_SETLENGTH:
+		{
+			unsigned int len=*params++;
+			len<<=8;
+			len+=*params;
+			if(len>0 && len<NUMLEDSMAX)
+				rgb_setlength(len);
+			break;
+		}
+		case COMMAND_SETADDRESS:
+		{
+			break;
+		}
+		case COMMAND_SETFACTORS:
+		{
+
 			break;
 		}
 		default:
@@ -76,7 +129,9 @@ void main(void) {
     i2c_init();
     spi_init();
     rgb_initdemo();
+
     spi_calculate(rgbmem,6);
+
     spi_dma_write();
 
 
@@ -87,7 +142,7 @@ void main(void) {
     TB0CTL = TBSSEL__SMCLK + MC__UP + ID__1;                 // SMCLK, UP mode
 
     __bis_SR_register(GIE);        // Enter LPM0 w/ interrupts
-
+    programMode=PROGRAM_IDLE;
     while(1)
     {
 
@@ -129,13 +184,14 @@ void main(void) {
     		default:
     		{
     			//programMode=PROGRAM_IDLE;
-    			//_nop();
+    			_nop();
     			break;
     		}
     	}
 #endif
     }
 }
+#ifndef COMPILE_MINIMAL
 // Timer B0 interrupt service routine
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
 #pragma vector = TIMER0_B0_VECTOR
@@ -150,7 +206,8 @@ void __attribute__ ((interrupt(TIMER0_B0_VECTOR))) Timer_B (void)
 
 	if(timercounter>0)
 		timercounter--;
-
-
+	//spi_calculate(rgbmem,rgb_getnumleds());
+	//spi_dma_write();
 }
 
+#endif

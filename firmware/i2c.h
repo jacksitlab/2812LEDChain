@@ -23,6 +23,8 @@ void  rgb_initdemo(void);
 #define rgb_getnumleds() rgb_numleds
 //returns length memory used for rgb values
 #define rgb_getlength() (3*rgb_numleds)
+#define rgb_setlength(len) (rgb_numleds=len)
+
 #ifndef COMPILE_MINIMAL
 void rgb_addoffset(signed char);
 void rgb_shift(unsigned char dir);

@@ -16,10 +16,15 @@
 unsigned char rgbmem[3*NUMLEDSMAX];//for RGB-Values
 #pragma SET_DATA_SECTION()
 
+#pragma SET_DATA_SECTION(".infoB")
+unsigned int rgb_numleds=6;
+unsigned char i2c_address;
+#pragma SET_DATA_SECTION()
+
 unsigned char parammem[16];
 
 static unsigned char state;
-unsigned int rgb_numleds=6;
+
 
 unsigned char TXData;
 unsigned int writeOffset=0;
@@ -50,7 +55,6 @@ void rgb_initdemo(void)
 	*ptr++=0xff;*ptr++=0xff;*ptr++=0x00;//Y
 	*ptr++=0xff;*ptr++=0x00;*ptr++=0xff;//M
 	*ptr++=0x00;*ptr++=0xff;*ptr++=0xff;//C
-
 }
 unsigned char tmp;
 //inline void xorSwap(unsigned char *x,unsigned char *y){ *x^=*y^(*y^=*x);}
@@ -146,7 +150,7 @@ switch(__even_in_range(UCB0IV,0x1E))
         	case STATE_WRITEMEM:	//write rgbmem
         		if(writeOffset<=0xff00)
         		{
-					if(rxPtr<rgbmem+sizeof(rgbmem))
+        			if(rxPtr<rgbmem+sizeof(rgbmem))
 						*rxPtr++=UCB0RXBUF;
         			else
 						empty=UCB0RXBUF;
