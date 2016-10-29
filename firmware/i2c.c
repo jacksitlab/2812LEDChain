@@ -88,12 +88,14 @@ void rgb_shift(unsigned char dir)
 }
 void i2c_init(void)
 {
+	if(i2c_address==0 || i2c_address>0x7f)
+		i2c_address=I2C_ADDRESS_DEFAULT;
 	// Configure Pins for I2C
 	    P1SEL1 |= BIT6 + BIT7;                  // Pin init
 	    // eUSCI configuration
 	    UCB0CTLW0 |= UCSWRST ;	            //Software reset enabled
 	    UCB0CTLW0 |= UCMODE_3  + UCSYNC;	    //I2C mode, sync mode
-	    UCB0I2COA0 = 0x44 + UCOAEN;   	    //own address is 0x48 + enable
+	    UCB0I2COA0 = i2c_address + UCOAEN;   	    //own address is 0x48 + enable
 	    UCB0CTLW0 &=~UCSWRST;	            //clear reset register
 	    UCB0IE |=  UCTXIE0 + UCRXIE0 + UCSTPIE + UCSTTIE; 	    //transmit,receive,stop,start interrupt enable
 

@@ -12,7 +12,10 @@ class WS2812ChainItem(object):
     COMMAND_RINGBUFFER=0x05
     COMMAND_FADEOUT=0x09
     COMMAND_FADEIN=0x0A
-
+    COMMAND_FADEOUT_LTR=0x0B
+    COMMAND_FADEIN_LTR =0x0C
+    COMMAND_FADEOUT_RTL=0x0D
+    COMMAND_FADEIN_RTL=0x0E
 
     def __init__(self,adr,bus):
         self._address=adr
@@ -58,6 +61,13 @@ class WS2812ChainItem(object):
 
     def FadeIn(self,delay):
         self.sendCommand(self.COMMAND_FADEIN,[0xff&(delay>>8),0xff&delay])
+
+    def FadeOutLTR(self,delay):
+        self.sendCommand(self.COMMAND_FADEOUT_LTR,[0xff&(delay>>8),0xff&delay])
+
+    def FadeInLTR(self,delay):
+        self.sendCommand(self.COMMAND_FADEIN_LTR,[0xff&(delay>>8),0xff&delay])
+
 
 
     def Test(self):

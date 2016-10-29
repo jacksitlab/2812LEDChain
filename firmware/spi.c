@@ -73,6 +73,54 @@ void rgb_decrement_factors(void)
 	for(i=0;i<NUMLEDSMAX;i++)
 		rgb_factors[i]=v;
 }
+void rgb_decrement_factors_left(unsigned int toleft)
+{
+	float v;
+	do
+	{
+		v=rgb_factors[toleft];
+		v-=RGBFACTOR_INCDEC;
+		if(v<0)
+			v=0;
+		rgb_factors[toleft]=v;
+	}while(toleft--);
+}
+void rgb_decrement_factors_right(unsigned int toright)
+{
+	float v;
+	do
+	{
+		v=rgb_factors[toright];
+		v-=RGBFACTOR_INCDEC;
+		if(v<0)
+			v=0;
+		rgb_factors[toright]=v;
+	}while(toright++<rgb_numleds-1);
+}
+void rgb_increment_factors_left(unsigned int toleft)
+{
+	float v;
+	do
+	{
+		v=rgb_factors[toleft];
+		v+=RGBFACTOR_INCDEC;
+		if(v>1)
+			v=1;
+		rgb_factors[toleft]=v;
+	}while(toleft--);
+}
+void rgb_increment_factors_right(unsigned int toright)
+{
+	float v;
+	do
+	{
+		v=rgb_factors[toright];
+		v+=RGBFACTOR_INCDEC;
+		if(v>1)
+			v=1;
+		rgb_factors[toright]=v;
+	}while(toright++<rgb_numleds-1);
+}
 void calc_RGB_3bit (unsigned char R, unsigned char G, unsigned char B,unsigned char n)
 {
 	R=(unsigned char)R*rgb_factors[n];

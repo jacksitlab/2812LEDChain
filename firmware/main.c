@@ -5,7 +5,7 @@
  * |           Memory 1               |
  * |          for RGB Values          |
  * |        Size: NUMLEDSMAX          |
- * |                                  |
+ * |             (FRAM)               |
  * |==================================|
  *
  *
@@ -14,7 +14,7 @@
  * |           Memory 2               |
  * |        for DMA output            |
  * |  Size: 3* RGBMem + ResetOffset   |
- * |                                  |
+ * |           (FRAM)                 |
  * |==================================|
  *
  *
@@ -22,7 +22,7 @@
  * |                                  |
  * |           Memory 3               |
  * |          for Config              |
- * |                                  |
+ * |            (InfoB)               |
  * |==================================|
  *
  */
@@ -45,6 +45,10 @@
 #define PROGRAM_RINGBUFFER 4
 #define PROGRAM_FADEOUT 5
 #define PROGRAM_FADEIN 6
+#define PROGRAM_FADEOUT_LTR 7
+#define PROGRAM_FADEIN_LTR 8
+#define PROGRAM_FADEOUT_RTL 9
+#define PROGRAM_FADEIN_RTL 10
 
 
 unsigned int programMode=PROGRAM_IDLE;
@@ -71,6 +75,9 @@ void i2c_onwritecomplete(unsigned char* ptr,unsigned int len)
 	programMode=PROGRAM_RECALCRGB;
 #endif
 }
+unsigned int ringbufferreset=1000;
+unsigned int fadetimerreset=1000;
+unsigned int fadedirection_index=0;
 void i2c_oncommand(unsigned int command,unsigned char* params)
 {
 #ifndef COMPILE_MINIMAL
@@ -114,17 +121,29 @@ void i2c_oncommand(unsigned int command,unsigned char* params)
 			break;
 		}
 		case COMMAND_FADEOUT:
-		{
-			programMode=PROGRAM_FADEOUT;
-			parammem[0]=*params++;
-			parammem[1]=*params++;
-			break;
-		}
 		case COMMAND_FADEIN:
 		{
-			programMode=PROGRAM_FADEIN;
 			parammem[0]=*params++;
 			parammem[1]=*params++;
+			programMode=command==COMMAND_FADEOUT?PROGRAM_FADEOUT:PROGRAM_FADEIN;
+			break;
+		}
+		case COMMAND_FADEIN_LTR:
+		case COMMAND_FADEOUT_LTR:
+		{
+			parammem[0]=*params++;
+			parammem[1]=*params++;
+			fadedirection_index=0;
+			programMode=command==COMMAND_FADEOUT_LTR?PROGRAM_FADEOUT_LTR:PROGRAM_FADEIN_LTR;
+			break;
+		}
+		case COMMAND_FADEIN_RTL:
+		case COMMAND_FADEOUT_RTL:
+		{
+			parammem[0]=*params++;
+			parammem[1]=*params++;
+			fadedirection_index=rgb_getnumleds();
+			programMode=command==COMMAND_FADEOUT_RTL?PROGRAM_FADEOUT_RTL:PROGRAM_FADEIN_RTL;
 			break;
 		}
 		default:
@@ -135,8 +154,6 @@ void i2c_oncommand(unsigned int command,unsigned char* params)
 /*
  * main.c
  */
-unsigned int ringbufferreset=1000;
-unsigned int fadetimerreset=1000;
 
 void main(void) {
     WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
@@ -146,7 +163,7 @@ void main(void) {
     spi_init();
     rgb_initdemo();
 
-    spi_calculate(rgbmem,6);
+    spi_calculate(rgbmem,rgb_getlength());
 
     spi_dma_write();
 
@@ -198,34 +215,63 @@ void main(void) {
     			break;
     		}
     		case PROGRAM_FADEOUT:
+    		case PROGRAM_FADEIN:
     		{
     			fadetimerreset=parammem[0];
     			fadetimerreset<<=8;
     			fadetimerreset|=parammem[1];
     			timercounter=fadetimerreset;
-    			rgb_decrement_factors();
+    			if(programMode==PROGRAM_FADEOUT)
+    				rgb_decrement_factors();
+    			else
+    				rgb_increment_factors();
     			while(timercounter>0)_nop();
     			spi_calculate(rgbmem,rgb_getnumleds());
     			spi_dma_write();
-    			if(rgb_getfactor(0)<=0)
-    				programMode=PROGRAM_IDLE;
+    			if(programMode==PROGRAM_FADEOUT)
+    			{
+    				if(rgb_getfactor(0)<=0)
+    					programMode=PROGRAM_IDLE;
+    			}
+    			else
+    			{
+    				if(rgb_getfactor(0)>=1)
+    				    programMode=PROGRAM_IDLE;
+    			}
     			break;
     		}
-    		case PROGRAM_FADEIN:
+    		case PROGRAM_FADEOUT_LTR:
+    		case PROGRAM_FADEIN_LTR:
     		{
     			fadetimerreset=parammem[0];
     		    fadetimerreset<<=8;
     		    fadetimerreset|=parammem[1];
     		    timercounter=fadetimerreset;
-    		    rgb_increment_factors();
+    		    if(programMode==PROGRAM_FADEOUT_LTR)
+    		        rgb_decrement_factors_left(fadedirection_index);
+    		    else //PROGRAM_FADEIN_LTR
+    		    	rgb_increment_factors_left(fadedirection_index);
     		    while(timercounter>0)_nop();
     		    spi_calculate(rgbmem,rgb_getnumleds());
     		    spi_dma_write();
-    		    if(rgb_getfactor(0)>=1)
-    		    	programMode=PROGRAM_IDLE;
+    		    if(programMode==PROGRAM_FADEOUT_LTR)
+    		    {
+    		    	if(rgb_getfactor(fadedirection_index)<0.5)
+    		  	    	if(fadedirection_index<rgb_getnumleds()-1)
+    		  	    		fadedirection_index++;
+					if(rgb_getfactor(rgb_getnumleds()-1)<=0)
+						programMode=PROGRAM_IDLE;
+    		    }
+    		    else	//PROGRAM_FADEIN_LTR
+    		    {
+    		    	if(rgb_getfactor(fadedirection_index)>0.5)
+    		  	    	if(fadedirection_index<rgb_getnumleds()-1)
+    		  	    		fadedirection_index++;
+					if(rgb_getfactor(rgb_getnumleds()-1)>=1)
+						programMode=PROGRAM_IDLE;
+    		    }
     		    break;
     		}
-
     		default:
     		{
     			//programMode=PROGRAM_IDLE;

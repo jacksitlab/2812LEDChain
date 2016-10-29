@@ -43,6 +43,18 @@ elif task=="fadeout":
         leds.FadeOut(v)
         resp.code=1
         resp.message="fading out"   
+elif task=="fadeinltr":
+    v=int(form.getvalue("value"))
+    if v>0 and v<65535:
+        leds.FadeInLTR(v)
+        resp.code=1
+        resp.message="fading in"
+elif task=="fadeoutltr":
+    v=int(form.getvalue("value"))
+    if v>0 and v<65535:
+        leds.FadeOutLTR(v)
+        resp.code=1
+        resp.message="fading out"
 
 else:
     resp.ocde=0
