@@ -19,6 +19,8 @@
 #define COMMAND_SETLENGTH 0x06
 #define COMMAND_SETADDRESS 0x07
 #define COMMAND_SETFACTORS 0x08
+#define COMMAND_FADEOUT 0x09		// param: delay(unsigned int)
+#define COMMAND_FADEIN 0x0A			// param: delay(unsigned int)
 
 //#define COMPILE_MINIMAL
 

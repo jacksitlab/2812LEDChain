@@ -11,6 +11,8 @@
 void spi_init(void);
 void spi_dma_write(void);
 void spi_calculate(unsigned char* src,unsigned int len);
-
+void rgb_increment_factors(void);
+void rgb_decrement_factors(void);
+float rgb_getfactor(unsigned int);
 
 #endif /* SPI_H_ */

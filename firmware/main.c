@@ -43,7 +43,8 @@
 #define PROGRAM_OFFSET 2
 #define PROGRAM_KITT 3
 #define PROGRAM_RINGBUFFER 4
-
+#define PROGRAM_FADEOUT 5
+#define PROGRAM_FADEIN 6
 
 
 unsigned int programMode=PROGRAM_IDLE;
@@ -112,6 +113,20 @@ void i2c_oncommand(unsigned int command,unsigned char* params)
 
 			break;
 		}
+		case COMMAND_FADEOUT:
+		{
+			programMode=PROGRAM_FADEOUT;
+			parammem[0]=*params++;
+			parammem[1]=*params++;
+			break;
+		}
+		case COMMAND_FADEIN:
+		{
+			programMode=PROGRAM_FADEIN;
+			parammem[0]=*params++;
+			parammem[1]=*params++;
+			break;
+		}
 		default:
 			break;
 	}
@@ -121,6 +136,7 @@ void i2c_oncommand(unsigned int command,unsigned char* params)
  * main.c
  */
 unsigned int ringbufferreset=1000;
+unsigned int fadetimerreset=1000;
 
 void main(void) {
     WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
@@ -181,6 +197,35 @@ void main(void) {
     			programMode=PROGRAM_IDLE;
     			break;
     		}
+    		case PROGRAM_FADEOUT:
+    		{
+    			fadetimerreset=parammem[0];
+    			fadetimerreset<<=8;
+    			fadetimerreset|=parammem[1];
+    			timercounter=fadetimerreset;
+    			rgb_decrement_factors();
+    			while(timercounter>0)_nop();
+    			spi_calculate(rgbmem,rgb_getnumleds());
+    			spi_dma_write();
+    			if(rgb_getfactor(0)<=0)
+    				programMode=PROGRAM_IDLE;
+    			break;
+    		}
+    		case PROGRAM_FADEIN:
+    		{
+    			fadetimerreset=parammem[0];
+    		    fadetimerreset<<=8;
+    		    fadetimerreset|=parammem[1];
+    		    timercounter=fadetimerreset;
+    		    rgb_increment_factors();
+    		    while(timercounter>0)_nop();
+    		    spi_calculate(rgbmem,rgb_getnumleds());
+    		    spi_dma_write();
+    		    if(rgb_getfactor(0)>=1)
+    		    	programMode=PROGRAM_IDLE;
+    		    break;
+    		}
+
     		default:
     		{
     			//programMode=PROGRAM_IDLE;

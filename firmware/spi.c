@@ -9,8 +9,11 @@
 #include "i2c.h"
 
 #define RESET_OFFSET 40
+#define RGBFACTOR_INCDEC 0.05f
+
 #pragma SET_DATA_SECTION(".fram_data_noinit")
 unsigned char ledoutputmem[3*3*NUMLEDSMAX+RESET_OFFSET];
+float rgb_factors[NUMLEDSMAX];
 //unsigned char ledoutfactors[NUMLEDSMAX+1/2];//4bit factor 0=>shift right 0; 0x0F
 #pragma SET_DATA_SECTION()
 
@@ -48,9 +51,34 @@ const unsigned long convert_table_3bit [256] = {		// 1 Byte => 3 Byte
  0xDB6924,0xDB6926,0xDB6934,0xDB6936,0xDB69A4,0xDB69A6,0xDB69B4,0xDB69B6,
  0xDB6D24,0xDB6D26,0xDB6D34,0xDB6D36,0xDB6DA4,0xDB6DA6,0xDB6DB4,0xDB6DB6   // ... 255
 };
-
+float rgb_getfactor(unsigned int index)
+{
+	return rgb_factors[index];
+}
+void rgb_increment_factors(void)
+{
+	unsigned int i;
+	float v=rgb_factors[0]+RGBFACTOR_INCDEC;
+	if(v>1)
+		v=1;
+	for(i=0;i<NUMLEDSMAX;i++)
+		rgb_factors[i]=v;
+}
+void rgb_decrement_factors(void)
+{
+	unsigned int i;
+	float v=rgb_factors[0]-RGBFACTOR_INCDEC;
+	if(v<0)
+		v=0;
+	for(i=0;i<NUMLEDSMAX;i++)
+		rgb_factors[i]=v;
+}
 void calc_RGB_3bit (unsigned char R, unsigned char G, unsigned char B,unsigned char n)
 {
+	R=(unsigned char)R*rgb_factors[n];
+	G=(unsigned char)G*rgb_factors[n];
+	B=(unsigned char)B*rgb_factors[n];
+
 	unsigned char *ptr=&ledoutputmem[RESET_OFFSET+(9*n)];
 	// Gruen
 	*ptr++= (unsigned char)(convert_table_3bit[G]>>16);
@@ -95,6 +123,9 @@ void spi_init(void)
 	  unsigned char* ptr=ledoutputmem;
 	  while(i--)
 		  *ptr++=0;
+
+	  for(i=0;i<NUMLEDSMAX;i++)
+		rgb_factors[i]=1.0f;
 }
 /*
  * Calculate rgbValues to dma-RAW-bytes for DMA sending

@@ -14,24 +14,38 @@ print
 
 chain=WS2812Chain(1)
 leds=chain.Add(0x44)
-rcode=0
-rmessage="nothing to do"
+resp=type('lamdbaobject', (object,), {})()
+resp.code=0
+resp.message="nothing to do"
 
 if task=="test":
     leds.Test2()
-    rcode=1
-    rmessage="testing successful"    
+    resp.code=1
+    resp.message="testing successful"    
 elif task=="offset":
     v=int(form.getvalue("value"))
     if v > -127 and v <= 127 and v <> 0 :
         leds.Offset(v)
-        rcode=1
-        rmessage="leds dimmed"
+        resp.code=1
+        resp.message="leds dimmed"
     else:
-        rcode=0
-        rmessage="invalid value"
-else:
-    rocde=0
+        resp.code=0
+        resp.message="invalid value"
+elif task=="fadein":
+    v=int(form.getvalue("value"))
+    if v>0 and v<65535:
+        leds.FadeIn(v)
+        resp.code=1
+        resp.message="fading in"
+elif task=="fadeout":
+    v=int(form.getvalue("value"))
+    if v>0 and v<65535:
+        leds.FadeOut(v)
+        resp.code=1
+        resp.message="fading out"   
 
-print "{\"code\":%d,\"message\":\"%s\"}" % (rcode,rmessage)
+else:
+    resp.ocde=0
+
+print "{\"code\":%d,\"message\":\"%s\"}" % (resp.code,resp.message)
 

@@ -10,6 +10,9 @@ class WS2812ChainItem(object):
     COMMAND_SETSENDINGMODE=0x03
     COMMAND_DEMO_KITT=0x04
     COMMAND_RINGBUFFER=0x05
+    COMMAND_FADEOUT=0x09
+    COMMAND_FADEIN=0x0A
+
 
     def __init__(self,adr,bus):
         self._address=adr
@@ -49,6 +52,13 @@ class WS2812ChainItem(object):
     # direction: 0=forward,1=backward
     def RingBuffer(self,speed,direction):
         self.sendCommand(self.COMMAND_RINGBUFFER,[0xff&(speed>>8),0xff&speed,direction])
+
+    def FadeOut(self,delay):
+        self.sendCommand(self.COMMAND_FADEOUT,[0xff&(delay>>8),0xff&delay])
+
+    def FadeIn(self,delay):
+        self.sendCommand(self.COMMAND_FADEIN,[0xff&(delay>>8),0xff&delay])
+
 
     def Test(self):
         ledcolors=[0xff0000,0x00ff00,0x0000ff,0xffff00,0xff00ff,0x00ffff]
