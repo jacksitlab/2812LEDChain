@@ -8,7 +8,7 @@
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
-#define NUMLEDSMAX 250
+#define NUMLEDSMAX 256
 
 #define I2C_ADDRESS_DEFAULT 0x44
 

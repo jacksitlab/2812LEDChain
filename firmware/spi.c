@@ -11,9 +11,16 @@
 #define RESET_OFFSET 40
 #define RGBFACTOR_INCDEC 0.05f
 
-#pragma SET_DATA_SECTION(".fram_data_noinit")
+#pragma location=0xE400
 unsigned char ledoutputmem[3*3*NUMLEDSMAX+RESET_OFFSET];
+#pragma SET_DATA_SECTION(".fram_data_noinit")
 float rgb_factors[NUMLEDSMAX];
+static unsigned char incdecIndex=0;
+const float incdecFactors[]={
+		0.05f,0.1f,0.15f,0.2f,0.25f,0.3f,0.35f,0.4f,0.45f,0.5f,
+		0.55f,0.6f,0.65f,0.7f,0.75f,0.8f,0.85f,0.9f,0.95f,1.0f
+};
+
 //unsigned char ledoutfactors[NUMLEDSMAX+1/2];//4bit factor 0=>shift right 0; 0x0F
 #pragma SET_DATA_SECTION()
 
@@ -58,18 +65,19 @@ float rgb_getfactor(unsigned int index)
 void rgb_increment_factors(void)
 {
 	unsigned int i;
-	float v=rgb_factors[0]+RGBFACTOR_INCDEC;
-	if(v>1)
-		v=1;
+	incdecIndex++;
+	if(incdecIndex>=sizeof(incdecFactors))
+		incdecIndex=sizeof(incdecFactors)-1;
+	float v=incdecFactors[incdecIndex];
 	for(i=0;i<NUMLEDSMAX;i++)
 		rgb_factors[i]=v;
 }
 void rgb_decrement_factors(void)
 {
 	unsigned int i;
-	float v=rgb_factors[0]-RGBFACTOR_INCDEC;
-	if(v<0)
-		v=0;
+	if(incdecIndex>0)
+		incdecIndex--;
+	float v=incdecFactors[incdecIndex];
 	for(i=0;i<NUMLEDSMAX;i++)
 		rgb_factors[i]=v;
 }
@@ -123,9 +131,9 @@ void rgb_increment_factors_right(unsigned int toright)
 }
 void calc_RGB_3bit (unsigned char R, unsigned char G, unsigned char B,unsigned char n)
 {
-	R=(unsigned char)R*rgb_factors[n];
-	G=(unsigned char)G*rgb_factors[n];
-	B=(unsigned char)B*rgb_factors[n];
+	R=(unsigned char)((float)R*rgb_factors[n]);
+	G=(unsigned char)((float)G*rgb_factors[n]);
+	B=(unsigned char)((float)B*rgb_factors[n]);
 
 	unsigned char *ptr=&ledoutputmem[RESET_OFFSET+(9*n)];
 	// Gruen
@@ -167,7 +175,7 @@ void spi_init(void)
 	  DMA0CTL |= DMAEN;                         // Enable DMA0
 
 	  //clear first bytes of outputmem for led reset signal
-	  unsigned char i=RESET_OFFSET;
+	  unsigned int i=RESET_OFFSET;
 	  unsigned char* ptr=ledoutputmem;
 	  while(i--)
 		  *ptr++=0;
@@ -196,7 +204,7 @@ void spi_calculate(unsigned char* src,unsigned int len)
 void spi_dma_write(void)
 {
 	DMA0CTL |= DMAEN;
-	//DMA0CTL |= DMAREQ;                      // Trigger block transfer
+//	DMA0CTL |= DMAREQ;                      // Trigger block transfer
 	UCA1TXBUF = ledoutputmem[0];
 }
 

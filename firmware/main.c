@@ -163,9 +163,9 @@ void main(void) {
     spi_init();
     rgb_initdemo();
 
-    spi_calculate(rgbmem,rgb_getlength());
+//    spi_calculate(rgbmem,rgb_getlength());
 
-    spi_dma_write();
+//    spi_dma_write();
 
 
     //=====TimerB Init for (24MHz)  / 24000 = 1000Hz = 1ms
@@ -175,7 +175,7 @@ void main(void) {
     TB0CTL = TBSSEL__SMCLK + MC__UP + ID__1;                 // SMCLK, UP mode
 
     __bis_SR_register(GIE);        // Enter LPM0 w/ interrupts
-    programMode=PROGRAM_IDLE;
+    programMode=PROGRAM_RECALCRGB;
     while(1)
     {
 
@@ -296,7 +296,15 @@ void __attribute__ ((interrupt(TIMER0_B0_VECTOR))) Timer_B (void)
 //	spi_dma_write();
 
 	if(timercounter>0)
+	{
 		timercounter--;
+	}
+	else
+	{
+	//	timercounter=5000;
+//		programMode=PROGRAM_RECALCRGB;
+
+	}
 	//spi_calculate(rgbmem,rgb_getnumleds());
 	//spi_dma_write();
 }

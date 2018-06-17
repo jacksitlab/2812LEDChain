@@ -12,13 +12,13 @@
 #define STATE_MOREADR 1
 #define STATE_WRITEMEM 2
 
-#pragma SET_DATA_SECTION(".fram_data_noinit")
+//#pragma SET_DATA_SECTION(".fram_data_noinit")
 unsigned char rgbmem[3*NUMLEDSMAX];//for RGB-Values
-#pragma SET_DATA_SECTION()
+//#pragma SET_DATA_SECTION()
 
 #pragma SET_DATA_SECTION(".infoB")
-unsigned int rgb_numleds=6;
-unsigned char i2c_address;
+unsigned int rgb_numleds=NUMLEDSMAX;
+static unsigned char i2c_address;
 #pragma SET_DATA_SECTION()
 
 unsigned char parammem[16];
@@ -49,12 +49,17 @@ void rgb_addoffset(signed char x)
 void rgb_initdemo(void)
 {
 	unsigned char* ptr=rgbmem;
-	*ptr++=0xff;*ptr++=0x00;*ptr++=0x00;//R
-	*ptr++=0x00;*ptr++=0xff;*ptr++=0x00;//G
-	*ptr++=0x00;*ptr++=0x00;*ptr++=0xff;//B
-	*ptr++=0xff;*ptr++=0xff;*ptr++=0x00;//Y
-	*ptr++=0xff;*ptr++=0x00;*ptr++=0xff;//M
-	*ptr++=0x00;*ptr++=0xff;*ptr++=0xff;//C
+	unsigned long colors[]={0xff0000,0xFFff00,0x0000ff,0xffff00,0xff00ff,0x00ffff};
+	unsigned int i;
+	unsigned long color;
+	for(i=0;i<rgb_numleds;i++)
+	{
+		color=colors[i%6];
+		*ptr++=(unsigned char)(0xff&(color>>16));
+		*ptr++=(unsigned char)(0xff&(color>>8));
+		*ptr++=(unsigned char)(0xff&(color));
+
+	}
 }
 unsigned char tmp;
 //inline void xorSwap(unsigned char *x,unsigned char *y){ *x^=*y^(*y^=*x);}
@@ -88,7 +93,7 @@ void rgb_shift(unsigned char dir)
 }
 void i2c_init(void)
 {
-	if(i2c_address==0 || i2c_address>0x7f)
+	//if(i2c_address==0 || i2c_address>0x7f)
 		i2c_address=I2C_ADDRESS_DEFAULT;
 	// Configure Pins for I2C
 	    P1SEL1 |= BIT6 + BIT7;                  // Pin init
@@ -140,39 +145,42 @@ switch(__even_in_range(UCB0IV,0x1E))
         	switch(state)
         	{
         	case STATE_IDLE:	//first 8bit of adr(HI)
-        		writeOffset=UCB0RXBUF;
+        		writeOffset=(0xff&UCB0RXBUF);
         		writeOffset<<=8;
         		state = STATE_MOREADR;
         		break;
         	case STATE_MOREADR:	//second 8bit of adr(LO)
-        		writeOffset|=UCB0RXBUF;
-        		rxPtr=writeOffset<=0xff00?rgbmem:parammem;
+        		writeOffset|=(0xff&UCB0RXBUF);
+        		//address rx-pointer
+        		//writeOffset=[0..0xff00] => rgbvalues => rgbmem+writeoffset
+        		//writeOffset=[0xff00..0xffff] => command => parammem
+        		rxPtr=writeOffset<=0xff00?(rgbmem+writeOffset):parammem;
         		state=STATE_WRITEMEM;
         		break;
         	case STATE_WRITEMEM:	//write rgbmem
         		if(writeOffset<=0xff00)
         		{
         			if(rxPtr<rgbmem+sizeof(rgbmem))
-						*rxPtr++=UCB0RXBUF;
+						*rxPtr++=(0xff&UCB0RXBUF);
         			else
-						empty=UCB0RXBUF;
+						empty=(0xff&UCB0RXBUF);
         		}
         		else	//commands for adr>=0xff00
         		{
         			if(rxPtr<parammem+sizeof(parammem))
-        				*rxPtr++=UCB0RXBUF;
+        				*rxPtr++=(0xff&UCB0RXBUF);
         			else
-        				empty=UCB0RXBUF;
+        				empty=(0xff&UCB0RXBUF);
         		}
         		break;
         	default:
-        		empty=UCB0RXBUF;
+        		empty=(0xff&UCB0RXBUF);
         		break;
         	}
         	break;
        	case 0x14:  break;// Vector 22: TXIFG1 break;
         case 0x18:
-        	if(txPtr<rgbmem+sizeof(rgbmem))
+        	if(txPtr<(rgbmem+sizeof(rgbmem)))
         		UCB0TXBUF = *txPtr++;
         	else
         		UCB0TXBUF=0;
