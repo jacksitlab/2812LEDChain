@@ -4,18 +4,18 @@ This Project is based on a little piece of Hardware I build for accessing 2812LE
 The Clou: It is possible to wire them from board to board and control them seperately. So you can wire the seperated LEDChains from one to another.
 The Controller works like a simple 32bit adressable I2C-EEPROM where you can write the RGB-Values.
 
-##Why the extra board? There is already a lib for the raspi that can control 2812LEDs.
+## Why the extra board? There is already a lib for the raspi that can control 2812LEDs.
 
 Yeah, thats right. But this lib is using the PWM-output Pin and many of my Projects are using this as it should be. That's why I want to put it on a place where I can control them with a seperate address.
  
-##Folders
+## Folders
 
 * pcb: all KiCAD files (Schematics and Layout files)
 * firmware: all microcontroller files for CodeComposerStudio(from Texas Instruments)
 * raspberry: all files to remote control the LEDChain from a Raspberry PI with python
 
 
-##Installation / Usage
+## Installation / Usage
 
 ### Firmware installation
 
@@ -34,7 +34,7 @@ Yeah, thats right. But this lib is using the PWM-output Pin and many of my Proje
 	from ws2812ledchain import *
 
 	chain=WS2812Chain(1)  //1 =>bus number(i2c-1 on raspi 2 and 3, i2c-0 on raspi 1)
-	leds=chain.Add(0x44)  //0x44 => 7bit address of the chain element. 0x44 is the default. can be modified in firmware
+	leds=chain.Add(0x44,256)  //0x44 => 7bit address of the chain element. 0x44 is the default. can be modified in firmware, 256 leds to handle
 	leds.Test()
 	leds.RingBuffer(500,0)  //shift forward every LED every 500ms 
 	time.sleep(5)
@@ -98,12 +98,12 @@ Yeah, thats right. But this lib is using the PWM-output Pin and many of my Proje
 
 ```
 
-##TODO
+## TODO
 
 * Set RGBChain Length via Command
 * Change I2C-Address via Command
 * Add more functions ...
 
-##License
+## License
 
 Beerware License.
